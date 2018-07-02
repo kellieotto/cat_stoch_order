@@ -1,11 +1,7 @@
-
 # coding: utf-8
 
-# In[ ]:
-
 '''
-
-
+Functions for stochastic ordering permutation tests for categorical data
 
 '''
 
@@ -30,6 +26,7 @@ def table_fun(x,y):
     '''
     return pd.crosstab(x,y)
     
+    
 def dm(x,label,alt):
     
     
@@ -41,6 +38,7 @@ def dm(x,label,alt):
     elif alt=="two.sided":
         T = np.abs(T)
     return T
+
 
 def dm_missing(x,label,alt):
     
@@ -58,6 +56,7 @@ def dm_missing(x,label,alt):
     elif alt=="two.sided":
         T = np.abs(T)
     return T
+
 
 def ad(x,label,alt):
     '''
@@ -109,10 +108,10 @@ def permute(x):
     A numpy.ndarray containing the permuted treatment levels
     
     '''
-    return np.random.choice(x,size=len(x),replace=False)
+    return np.random.choice(x, size=len(x), replace=False)
 
 
-def stochastic_ordering(data,B,fun="ad",alt="less"):
+def stochastic_ordering(data, B, fun="ad", alt="less"):
     '''
     Test the stochastic ordering and return the p-values.
     
@@ -133,78 +132,76 @@ def stochastic_ordering(data,B,fun="ad",alt="less"):
     gpsplits: global p-values combining splits first
     
     '''
+    
+    # Choose the test statistic
     if fun == "ad":
         test_fun = ad
     elif fun == "dm":
         test_fun = dm
     elif fun == "dm_na":
         test_fun = dm_missing
+    else:
+        raise ValueError("Bad function supplied")
     
+    # Calculate data parameters: num variables, num columns, num treatment levels
     nv = len(data.columns) - 2
     nc = nv + 2
     ns = len(np.unique(data.Treatment))
-    #print(nv,ns)
-    #observed statistic
-    tst = []
-    for i in range(1,len(np.unique(data.Treatment))):
-        data["group"] = 1
-        data.group[data["Treatment"]>i] = 2
-        for j in range(2,nc):
-            tst.append(test_fun(data.iloc[:,j],data.group,alt))
-            
 
     
-    #permuted statistic    
-    tst_glob = np.zeros((B+1,nv*(ns-1)))
-    tst_glob[0,:] = tst
-    
-    for i in range(B):
-    
-        data["new_treat"] = permute(data.Treatment)
-        tst_perm = np.empty(0)
-        for j in range(1,ns):
-            
+    def compute_stats(treatment):
+        # Compute the test statistics for each level of treatment
+        # Split data into groups: treatment <= i and treatment > i
+        tst = np.empty(0)
+        for i in range(1, ns):
             data["group"] = 1
-            data.group[data["new_treat"]>j] = 2
-            for k in range(2,nc):
-                tst_perm = np.append(tst_perm,test_fun(data.iloc[:,k],data.group,alt))
-        tst_glob[i+1,:] = tst_perm
+            data.group[treatment > i] = 2
+        
+            # Compute the observed test statistic for each variable
+            for j in range(2,nc):
+                tst = np.append(tst, test_fun(data.iloc[:,j], data.group, alt))
+        return tst
     
-    #print(tst_glob)
-    #partial p-values
+    # Initialize an array of permuted statistics
+    tst_glob = np.zeros((B+1,nv*(ns-1)))
+
+    # Compute the observed test statistics
+    tst_glob[0,:] = compute_stats(data.Treatment)
+    
+    # Compute permuted statistics
+    for i in range(B):
+        data["new_treat"] = permute(data.Treatment)
+        tst_glob[i+1,:] = compute_stats(data.new_treat)
+    
+    # Apply t2p to each column of the test statistic array
+    # to get partial p-values for each permutation
+    # pp_values has the same dimension as tst_glob.
     pp_values = []
     for i in range(0,nv*(ns-1)):
         pp = t2p(tst_glob[:,i],"greater")
         pp_values.append(pp)
     pp_values = np.asarray(pp_values).T
-    #print(pp_values)
     
-
-    
-    #global p-values: combining the different splits before than the different variables
+    # global p-values: combining the different treatment splits first, then the different variables
     var = []
     for i in range(0,nv):
-        #print(nv*np.arange(ns-1)+i)
-       
         temp = pp_values[:,nv*np.arange(ns-1)+i]
         var.append(np.apply_along_axis(fisher, 1, temp))
     var = np.stack(var,axis=1)
-    
+
     pvar_1 = []
     for i in range(nv):
         pp = t2p(var[:,i],"greater")
         pvar_1.append(pp)
-    pvar_1 = np.asarray(pvar_1).T                    
-                
+    pvar_1 = np.asarray(pvar_1).T
+
     distr_1 = np.apply_along_axis(fisher, 1, pvar_1)
     gpvalues_1 = np.sum(distr_1[1:] >= distr_1[0]) / B
     
-    #global p-values: combining the different variables before than the different splits
+    # global p-values: combining the different variables first, then the different treatment splits
     var = []
     for i in range(0,ns-1):
         temp = pp_values[:,np.arange(i*nv,(i+1)*nv)]
-        #print(np.arange(i*nv,(i+1)*nv))
-        
         var.append(np.apply_along_axis(fisher, 1, temp))
     var = np.stack(var,axis=1)
     
@@ -212,18 +209,17 @@ def stochastic_ordering(data,B,fun="ad",alt="less"):
     for i in range(ns-1):
         pp = t2p(var[:,i],"greater")
         pvar_2.append(pp)
-    pvar_2 = np.asarray(pvar_2).T                    
-        
+    pvar_2 = np.asarray(pvar_2).T
+
     distr_2 = np.apply_along_axis(fisher, 1, pvar_2)
     gpvalues_2 = np.sum(distr_2[1:] >= distr_2[0]) / B
     
-     
-    
-    return {"ppall": pp_values, "ppvariables": pvar_1[0], "ppsplits": pvar_2[0], "gpvariables": gpvalues_1, "gpsplits": gpvalues_2} 
+    return {"ppall": pp_values, 
+            "ppvariables": pvar_1[0], 
+            "ppsplits": pvar_2[0], 
+            "gpvariables": gpvalues_1, 
+            "gpsplits": gpvalues_2} 
 
-
-    
-    
 
 def corrcheck(marginal, support = None, Spearman = False): 
 
