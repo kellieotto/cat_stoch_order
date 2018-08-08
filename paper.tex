@@ -1,0 +1,104 @@
+\documentclass[12pt]{article}
+\usepackage[breaklinks=true]{hyperref}
+\usepackage{color}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{natbib}
+\usepackage{array}
+\usepackage{booktabs, multicol, multirow}
+\usepackage[nohead]{geometry}
+\usepackage[singlespacing]{setspace}
+\usepackage[bottom]{footmisc}
+\usepackage{floatrow}
+\usepackage{float,graphicx}
+\usepackage{caption}
+\usepackage{indentfirst}
+
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{assumption}{Assumption}
+
+\newcommand{\beq}{\begin{equation}}
+\newcommand{\eeq}{\end{equation}}
+
+
+\newcommand{\todo}[1]{{\color{red}{TO DO: \sc #1}}}
+
+\newcommand{\reals}{\mathbb{R}}
+\newcommand{\integers}{\mathbb{Z}}
+\newcommand{\naturals}{\mathbb{N}}
+\newcommand{\rationals}{\mathbb{Q}}
+
+\newcommand{\ind}{\mathbb{I}} % Indicator function
+\newcommand{\pr}{\mathbb{P}} % Generic probability
+\newcommand{\ex}{\mathbb{E}} % Generic expectation
+\newcommand{\var}{\textrm{Var}}
+\newcommand{\cov}{\textrm{Cov}}
+
+\newcommand{\normal}{N} % for normal distribution (can probably skip this)
+\newcommand{\eps}{\varepsilon}
+\newcommand\independent{\protect\mathpalette{\protect\independenT}{\perp}}
+\def\independenT#1#2{\mathrel{\rlap{$#1#2$}\mkern2mu{#1#2}}}
+\newcommand{\argmax}{\textrm{argmax}}
+\newcommand{\argmin}{\textrm{argmin}}
+\renewcommand{\baselinestretch}{1.5}
+
+\title{Notes for categorical stochastic ordering test}
+\author{}
+\date{Draft \today}
+\begin{document}
+\maketitle
+
+
+\section{Notation}
+
+\todo{reconcile notation. Something about the way I'm denoting treatment is off! The null should be that $Y$ is equal in distribution across treatment groups.}
+
+We have $n$ experimental units indexed $i=1, \ldots, n$.
+Each unit receives a categorical treatment variable $X_i$ with levels $\{1, \ldots, k\}$.
+Treatment is an \emph{ordered} categorical variable.
+For example, treatment levels may be increasing doses of a drug.
+
+Units have a vector of responses or outcomes $Y_i = (Y_{i1}, \ldots, Y_{iV})$.
+Later on, we will describe the values that each variable $Y_{\cdot v}$ can take, $v = 1, \ldots, V$.
+
+The null hypothesis is no effect of treatment:
+
+$$H_0: X_1 \stackrel{d}{=} X_2 \stackrel{d}{=} \ldots \stackrel{d}{=} X_k.$$
+
+The alternative is a stochastic ordering:
+
+$$H_1: X_1 \stackrel{d}{\leq} X_2 \stackrel{d}{\leq} \ldots \stackrel{d}{leq} X_k,$$
+
+where at least one inequality is strict.
+The alternative hypothesis implies that the cumulative distribution functions of each treatment
+are decreasing:
+
+$$F_1(x) \geq F_2(x) \geq \ldots \geq F_k(x).$$
+
+
+\section{Methods}
+
+The alternative hypothesis implies the following relations hold:
+
+\begin{align*}
+F_1(x) &\geq F_{2 \cdots k}(x) \\
+F_{12}(x) &\geq F_{3 \cdots k}(x) \\
+&\vdots \\
+F_{1 \cdots k-1}(x) &\geq F_{k}(x)
+\end{align*}
+where $F_{i_1 \cdots i_j}$ denotes the pooled distribution of individuals with $X_i \in \{i_1, \ldots, i_j\}$.
+
+This suggests the following permutation testing procedure:
+
+\begin{enumerate}
+\item Permute the treatment vector $X$
+\item Compute a test statistic for each of $V$ variables and the $k-1$ partitions of into two ordered treatment groups: 
+$\{1\}$ against $\{2, \ldots, k\}$,
+$\{1, 2\}$ against $\{3, \ldots, k\}$,
+up to $\{1, 2, \ldots, k-1\}$ against $\{k\}$.
+\item Use NPC to combine the $V \times (k-1)$ partial tests.
+\end{enumerate}
+
+
+\end{document}
