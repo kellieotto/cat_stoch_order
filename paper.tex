@@ -52,32 +52,34 @@
 
 \section{Notation}
 
-\todo{reconcile notation. Something about the way I'm denoting treatment is off! The null should be that $Y$ is equal in distribution across treatment groups.}
-
 We have $n$ experimental units indexed $i=1, \ldots, n$.
 Each unit receives a categorical treatment variable $X_i$ with levels $\{1, \ldots, k\}$.
 Treatment is an \emph{ordered} categorical variable.
 For example, treatment levels may be increasing doses of a drug.
 
-Units have a vector of responses or outcomes $Y_i = (Y_{i1}, \ldots, Y_{iV})$.
-Later on, we will describe the values that each variable $Y_{\cdot v}$ can take, $v = 1, \ldots, V$.
+Units in group $j$ have a vector of responses or outcomes $Y_{ij} = (Y_{ij1}, \ldots, Y_{ijV})$.
+Let $Y_j = (Y_{1j}, \ldots, Y_{n_j j})$ be the responses of units $i=1, \ldots, n_j$ in group $j$, $\sum_{j=1}^k n_j = n$.
+Later on, we will describe the values that each variable $Y_{\cdot \cdot v}$ can take, $v = 1, \ldots, V$.
 
 The null hypothesis is no effect of treatment:
 
-$$H_0: X_1 \stackrel{d}{=} X_2 \stackrel{d}{=} \ldots \stackrel{d}{=} X_k.$$
+$$H_0: Y_1 \stackrel{d}{=} Y_2 \stackrel{d}{=} \ldots \stackrel{d}{=} Y_k.$$
 
 The alternative is a stochastic ordering:
 
-$$H_1: X_1 \stackrel{d}{\leq} X_2 \stackrel{d}{\leq} \ldots \stackrel{d}{leq} X_k,$$
+$$H_1: Y_1 \stackrel{d}{\leq} Y_2 \stackrel{d}{\leq} \ldots \stackrel{d}{leq} Y_k,$$
 
 where at least one inequality is strict.
-The alternative hypothesis implies that the cumulative distribution functions of each treatment
+The alternative hypothesis implies that the cumulative distribution functions of each treatment group
 are decreasing:
 
 $$F_1(x) \geq F_2(x) \geq \ldots \geq F_k(x).$$
 
+Crucially, we assume that the treatment assignments $X_i$ are exchangeable under the null hypothesis.
 
 \section{Methods}
+
+\todo{Brombin and Di Serio (2016) lays out the notation for this very nicely. Let's rewrite based on their Section 3.}
 
 The alternative hypothesis implies the following relations hold:
 
@@ -99,6 +101,27 @@ $\{1, 2\}$ against $\{3, \ldots, k\}$,
 up to $\{1, 2, \ldots, k-1\}$ against $\{k\}$.
 \item Use NPC to combine the $V \times (k-1)$ partial tests.
 \end{enumerate}
+
+\section{Literature review}
+\begin{itemize}
+\item Davidov and Peddada (2011) 
+X: ordered categorical variable, Y: multivariate binary
+
+Thm 1 reduces the problem of a multivariate stochastic ordering to showing that at least one of the variables is smaller in distribution. m dimensional instead of super-exponential.
+
+Test using a distance stat between MLE of the discrete distributions under H0 and H1. Use ridge to penalize the covariance matrix if 1s in the data are rare.
+
+They use bootstrapping to calibrate the distribution of the statistic.
+\item Jelizarow et al. (2015): Test statistics for multivariate ordinal data. Seems relevant. (Section 3.2)
+\item Brombin and Di Serio (2016): This paper addresses exactly our question of interest using NPC. They use a t-statistic for continuous variables, discrete Anderson-Darling statistic for dominance alternatives. and pool groups like we do.
+\item Jelizarow et al. (2016): Parametric tests for GLMs where the treatment is ordered categorical and the outcome is continuous or binary. Handles covariates as well. Permutation tests are hard with covariates present, but if we omit them then maybe we can use this approach in a permutation framework.
+\item Li et al. (2016): Ordered categorical variables with potentially missing values.
+
+They format the data as a contingency table, but we could reformulate it as an ordered treatment and multivariate binary responses. This data is a case where outcomes are correlated.
+
+They propose a bootstrap test in section 3.2
+\item Ushakov and Ushakov (2017): They propose a test for homogeneity; their null is the same as ours while the alternative is unordered. Not exactly what we're looking for.
+\end{itemize}
 
 
 \end{document}
